@@ -17,10 +17,9 @@ for file in glob.glob(os.path.join(PATH, '*.txt')):
     print(nfile_path)
     cleaned_file = open(nfile_path, 'w', encoding='utf-8')
 
-    with open(file, 'r', encoding='utf-8') as dirty_file:
+    with open(file, 'r', encoding='ANSI') as dirty_file:
         nlp = de_dep_news_trf.load()
         text = dirty_file.read()
-        cleaned_text = pipeline.clean(text)
         doc = nlp(text)
         no_punct = [token for token in doc if not
         token.is_punct and not token.is_digit and not token.is_currency and not token.is_bracket]
