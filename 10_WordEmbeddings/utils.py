@@ -20,5 +20,3 @@ class Document:
 
     def set_doc_vector(self, vector):
         self.doc_vector = vector
-
-
