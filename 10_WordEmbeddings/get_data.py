@@ -63,6 +63,8 @@ people = []
 for person in tqdm(all_people, total=len(all_people), desc="Filtering..."):
     if get_person_details_by_id(person['ID'])['active']:
         people.append(person)
+    else:
+        people.append(person)
 
 for person in tqdm(people, total=len(people), desc="Searching..."):
     if os.path.exists("corpora.pickle"):
