@@ -2,6 +2,8 @@ import os
 import pickle
 
 import requests
+from pyodata.exceptions import HttpError
+
 import swissparlpy as spp
 from tqdm import tqdm
 
@@ -21,19 +23,25 @@ def get_transcript_by_bs_id(business_id):
 
 
 def get_business_data(person_lastname, person_firstname):
-    bs = spp.get_data(
-        "Business",
-        Language="DE",
-        SubmittedBy=f"{person_lastname} {person_firstname}",
-        SubmissionDate__gt=datetime.fromisoformat("1980-01-01 00:00:00+00:00")
-    )
-    return bs
+    try:
+        bs = spp.get_data(
+            "Business",
+            Language="DE",
+            SubmittedBy=f"{person_lastname} {person_firstname}",
+            SubmissionDate__gt=datetime.fromisoformat("1980-01-01 00:00:00+00:00")
+        )
+        return bs
+    except HttpError:
+        return None
 
 
 def get_person_details_by_id(person_id):
     url = f"http://ws-old.parlament.ch:80/councillors/{person_id}?lang=de&format=json"
     r = requests.get(url, headers={'Accept': 'application/json'})
-    return r.json()
+    try:
+        return r.json()
+    except:
+        return None
 
 
 def load_corpora(path):
@@ -54,6 +62,14 @@ def load_data(corp, person_obj):
             business_id = business['ID']
             # transcript = get_transcript_by_bs_id(business_id)
             corp[business_id] = Affair(business, person_details, None)
+            # corp[business_id].clean_text()
+            """
+            corp[business_id].tag_text(
+                TAGLANG='de',
+                TAGPARFILE=r"C:\TreeTagger\lib\german.par",
+                TAGABBREV=r"C:\TreeTagger\lib\german-abbreviations-utf8"
+            )
+            """
         except KeyError:
             continue
 
@@ -63,10 +79,8 @@ people = []
 for person in tqdm(all_people, total=len(all_people), desc="Filtering..."):
     if get_person_details_by_id(person['ID'])['active']:
         people.append(person)
-    else:
-        people.append(person)
 
-for person in tqdm(people, total=len(people), desc="Searching..."):
+for person in tqdm(all_people, total=len(all_people), desc="Searching..."):
     if os.path.exists("corpora.pickle"):
         corpora = load_corpora("corpora.pickle")
         load_data(corpora, person)

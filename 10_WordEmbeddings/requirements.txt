@@ -5,4 +5,11 @@ pillow~=10.2.0
 pdf2image~=1.17.0
 pypdf~=4.0.1
 gensim~=4.3.2
-pdfminer-six
+top2vec~=1.0.34
+tqdm~=4.66.2
+requests~=2.31.0
+pandas~=2.2.1
+swissparlpy~=0.3.0
+treetaggerwrapper~=2.3
+spacy~=3.7.4
+pyodata~=1.11.1

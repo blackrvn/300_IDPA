@@ -17,5 +17,6 @@ for affair_id, text in affair_text_dict.items():
     doc = nlp(text)
     no_punct = [token for token in doc if not
                 token.is_punct and not token.is_digit and not token.is_currency and not token.is_bracket]
-    affair_obj = corpora.get_affair_by_id(affair_id)
+    affair_obj = corpora[affair_id]
     affair_obj.clean_text = no_punct
+    
