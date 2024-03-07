@@ -2,6 +2,7 @@ from datetime import datetime
 import spacy
 import treetaggerwrapper
 from spacy.lang.de.stop_words import STOP_WORDS
+from icecream import ic
 
 model = spacy.load("de_dep_news_trf")
 import de_dep_news_trf
@@ -14,12 +15,11 @@ class Affair:
         self.person_details = person_details
         self.transcripts = transcripts
         self.text_raw = {"InitialSituation": spp_business_obj["InitialSituation"],
+                         "Title": spp_business_obj["Title"],
                          "DraftText": spp_business_obj["DraftText"],
                          "ReasonText": spp_business_obj["ReasonText"],
                          "DocumentationText": spp_business_obj["DocumentationText"],
-                         "MotionText": spp_business_obj["MotionText"],
-                         "FederalCouncilResponseText": spp_business_obj["FederalCouncilResponseText"],
-                         "FederalCouncilProposalText": spp_business_obj["FederalCouncilProposalText"]
+                         "MotionText": spp_business_obj["MotionText"]
                          }
         self.text_clean = None
         self.text_tagged = None
@@ -28,29 +28,29 @@ class Affair:
         text_raw = self.get_raw_text()
         text = ''
         for string in text_raw.values():
+
             if isinstance(string, str):
                 nlp = de_dep_news_trf.load()
                 doc = nlp(string)
-                no_punct = [token for token in doc if not
-                            token.is_punct and not token.is_digit and not token.is_currency and not token.is_bracket]
-                for token in no_punct:
-                    try:
-                        text.join(f"{token.text.lower()} ")
-                    except TypeError:
-                        text.join(f"{token.text} ")
+                clean = [token for token in doc if not
+                         token.is_punct and not token.is_digit and not token.is_currency
+                         and not token.is_bracket and len(token.text) > 1]
+                for token in clean:
+                    text += token.text.lower().strip('<p>').strip('</p>') + " "
         self.text_clean = text
 
     def tag_text(self, **kwargs):
         text_to_tag = self.text_clean
         tagger = treetaggerwrapper.TreeTagger(**kwargs)
-        tags = tagger.tag_text(text_to_tag)
+        tags = treetaggerwrapper.make_tags(tagger.tag_text(text_to_tag))
         for idx, tag in enumerate(tags):
-            text = tag.values()
-            for token in text:
-                if token.is_punct or token.is_digit or token.is_bracket or token.is_currency or token.is_quote or token.is_stop or token.text in STOP_WORDS:
-                    tags.pop(idx)
-                elif "+" in token.text or "@" in token.text:
-                    tags.pop(idx)
+            lemma = tag[-1]
+            ic(lemma)
+            if lemma in STOP_WORDS:
+                tags.pop(idx)
+            elif "+" in lemma or "@" in lemma:
+                tags.pop(idx)
+
         self.text_tagged = tags
 
     def get_raw_text(self):
@@ -77,16 +77,27 @@ class Corpora(dict):
         return [affair for affair in self.values() if
                 start_date <= affair.spp_business_obj["SubmissionDate"] <= end_date]
 
-    def get_affairs_by_person(self, last_name, first_name):
+    def get_affairs_by_person(self, name):
         try:
-            return [affair for affair in self.values() if first_name == affair.spp_person_oj["FirstName"]
-                    and last_name == affair.spp_person_oj["LastName"]]
+            result = []
+            for affair in self.values():
+                if isinstance(affair.person_details, dict):
+                    if affair.spp_business_obj["SubmittedBy"] == name:
+                        result.append(affair)
+            return result
         except KeyError:
             return "No such person"
 
     def get_affair_by_party(self, party):
         try:
-            result = [affair for affair in self.values() if affair.person_details['party'] == party]
+            result = []
+            for affair in self.values():
+                if isinstance(affair.person_details, dict):
+                    if 'party' in affair.person_details.keys():
+                        if affair.person_details["party"] == party:
+                            result.append(affair)
+                else:
+                    pass
             if len(result) > 0:
                 return result
             else:

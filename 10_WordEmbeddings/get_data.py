@@ -112,7 +112,6 @@ def dump_corpora(obj, path):
 
 def load_data(corp, start, end):
     business_dict = get_business_data(start, end)
-    ic(business_dict)
     try:
         for person_id, business_lst in business_dict.items():
             try:
@@ -121,14 +120,12 @@ def load_data(corp, start, end):
                     person_details = get_person_details_by_id(person_id)
                     # transcript = get_transcript_by_bs_id(business_id)
                     corp[business_id] = Affair(business, person_details, None)
-                    # corp[business_id].clean_text()
-                    """
+                    corp[business_id].clean_text()
                     corp[business_id].tag_text(
                         TAGLANG='de',
                         TAGPARFILE=r"C:\TreeTagger\lib\german.par",
                         TAGABBREV=r"C:\TreeTagger\lib\german-abbreviations"
                     )
-                    """
             except KeyError:
                 continue
     except AttributeError:
