@@ -11,8 +11,8 @@ from icecream import ic
 
 nlp = de_dep_news_trf.load()
 
-file_write = open(r"C:\Users\vruser01\OneDrive - P.ARC AG\affairs.json", "w", encoding="utf-8")
-file_read = open(r"C:\Users\vruser01\OneDrive - P.ARC AG\affairs.json", "r", encoding="utf-8")
+file_write = open(r"affairs.json", "a", encoding="utf-8")
+file_read = open(r"affairs.json", "r", encoding="utf-8")
 
 
 def get_data(url):
@@ -42,18 +42,21 @@ def tag_text(cleaned_text):
     )
     tags = treetaggerwrapper.make_tags(tagger.tag_text(cleaned_text))
     out_dict = {"Words": [], "Tags": [], "Lemmas": []}
-    for idx, tag in enumerate(tags):
-        lemma = tag[2]
-        if len(lemma) == 1:
-            continue
-        elif "+" in lemma or "@" in lemma:
-            out_dict["Words"].append(tag[0])
-            out_dict["Tags"].append(tag[1])
-            out_dict["Lemmas"].append(tag[0])
-        else:
-            out_dict["Words"].append(tag[0])
-            out_dict["Tags"].append(tag[1])
-            out_dict["Lemmas"].append(tag[-1])
+    try:
+        for idx, tag in enumerate(tags):
+            lemma = tag[2]
+            if len(lemma) == 1:
+                continue
+            elif "+" in lemma or "@" in lemma:
+                out_dict["Words"].append(tag[0])
+                out_dict["Tags"].append(tag[1])
+                out_dict["Lemmas"].append(tag[0])
+            else:
+                out_dict["Words"].append(tag[0])
+                out_dict["Tags"].append(tag[1])
+                out_dict["Lemmas"].append(tag[-1])
+    except:
+        pass
 
     return out_dict
 
@@ -61,34 +64,34 @@ def tag_text(cleaned_text):
 def download():
     lst_details = []
 
-    for i in tqdm(range(1, 1183), total=1184, desc="Downloading", leave=False):
+    for i in tqdm(range(1, 1185), total=1184, desc="Downloading", leave=True):
         for affair in get_data(url=f"https://ws-old.parlament.ch/affairs?pageNumber={i}&lang=de"
                                    f"&format=json"):
             details = get_data(url=f'https://ws-old.parlament.ch/affairs/{affair["id"]}?lang=de&format=json')
-            if details["affairType"]["id"] in [1, 2, 3, 4, 7, 10]:
-                continue
-            elif "councillor" in list(details["author"].keys()):
-                subbmitted_by = details["author"]["councillor"]["id"]
-                person_details = get_data(
-                    url=f"https://ws-old.parlament.ch/councillors/{subbmitted_by}?lang=de&format=json")
-                if "party" in person_details.keys():
-                    party = person_details["party"]
-                    details["author"]["councillor"]["party"] = party
+            if isinstance(details, dict) and details is not None:
+                if details["affairType"]["id"] in [1, 2, 3, 4, 7, 10]:
+                    continue
+                elif "councillor" in list(details["author"].keys()):
+                    subbmitted_by = details["author"]["councillor"]["id"]
+                    person_details = get_data(
+                        url=f"https://ws-old.parlament.ch/councillors/{subbmitted_by}?lang=de&format=json")
+                    if "party" in person_details.keys():
+                        party = person_details["party"]
+                        details["author"]["councillor"]["party"] = party
 
-            cleaned_text = ""
-            for text in details["texts"]:
-                if isinstance(text, dict):
+                cleaned_text = ""
+                for text in details["texts"]:
                     t = ""
                     if "type" in text.keys():
                         if text["type"]["id"] in [1, 5]:
                             t += " " + text["value"]
 
                     cleaned_text += " " + clean_text(t)
-            tagged_text = tag_text(cleaned_text)
-            details["texts"].append({"cleaned": cleaned_text})
-            details["texts"].append({"tagged": tagged_text})
+                tagged_text = tag_text(cleaned_text)
+                details["texts"].append({"cleaned": cleaned_text})
+                details["texts"].append({"tagged": tagged_text})
 
-            lst_details.append(details)
+                lst_details.append(details)
 
     json.dump(lst_details, file_write, indent=3, ensure_ascii=False)
 

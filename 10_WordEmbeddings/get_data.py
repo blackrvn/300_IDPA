@@ -121,11 +121,6 @@ def load_data(corp, start, end):
                     # transcript = get_transcript_by_bs_id(business_id)
                     corp[business_id] = Affair(business, person_details, None)
                     corp[business_id].clean_text()
-                    corp[business_id].tag_text(
-                        TAGLANG='de',
-                        TAGPARFILE=r"C:\TreeTagger\lib\german.par",
-                        TAGABBREV=r"C:\TreeTagger\lib\german-abbreviations"
-                    )
             except KeyError:
                 continue
     except AttributeError:
@@ -167,4 +162,11 @@ for person in tqdm(all_people, total=len(all_people), desc="Searching..."):
 """
 
 print("Result by Party:")
-print(load_corpora("corpora.pickle").get_affair_by_party("SP"))
+crp = load_corpora("corpora.pickle")
+for affair in list(crp.values()):
+    affair.tag_text(
+                        TAGLANG='de',
+                        TAGPARFILE=r"C:\TreeTagger\lib\german.par",
+                        TAGABBREV=r"C:\TreeTagger\lib\german-abbreviations"
+                    )
+dump_corpora(crp, "corpora.pickle")

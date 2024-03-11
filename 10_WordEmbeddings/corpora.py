@@ -7,6 +7,8 @@ from icecream import ic
 model = spacy.load("de_dep_news_trf")
 import de_dep_news_trf
 
+nlp = de_dep_news_trf.load()
+
 
 class Affair:
 
@@ -30,7 +32,6 @@ class Affair:
         for string in text_raw.values():
 
             if isinstance(string, str):
-                nlp = de_dep_news_trf.load()
                 doc = nlp(string)
                 clean = [token for token in doc if not
                          token.is_punct and not token.is_digit and not token.is_currency
