@@ -12,24 +12,25 @@ data = json.load(file)
 party_indices = {}
 corpus = []
 
-for idx, affair in tqdm(enumerate(data), total=len(data)):
+for affair in tqdm(data, total=len(data)):
     if "councillor" in affair["author"].keys() and "party" in affair["author"]["councillor"].keys():
         party = affair["author"]["councillor"]["party"]
         councillor = affair["author"]["councillor"]["name"]
+        affair_num = affair["shortId"]
         for d in affair["texts"]:
 
             if "tagged" in d.keys():
                 lemmas = d["tagged"]["Lemmas"]
                 lemmas_text = " ".join(lemmas)
                 tokens = gensim.utils.simple_preprocess(lemmas_text)
-                doc = gensim.models.doc2vec.TaggedDocument(tokens, [idx, party, councillor])
+                doc = gensim.models.doc2vec.TaggedDocument(tokens, [party])
                 corpus.append(doc)
 
 
 model = Doc2Vec(vector_size=70, min_count=5, epochs=50, window=5, hs=1)
 model.build_vocab(corpus)
 model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
-model.save("affairs.d2v")
+model.save("tag_party.d2v")
 
 """
 test_vec = model.infer_vector(test_doc)
