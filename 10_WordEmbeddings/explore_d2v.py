@@ -18,12 +18,12 @@ tsne = TSNE(n_components=2, random_state=0)
 
 NUM_CLUSTERS = len(interested_parties)
 
-model_parties = Doc2Vec.load('tag_party.d2v')
+model_parties = Doc2Vec.load(r'DocModels\tag_party_1970.d2v')
 party_vectors = model_parties.dv.vectors
 parties = [p for p in model_parties.dv.index_to_key if p in interested_parties]
 num_parties = len(party_vectors)
 
-model_councillors = Doc2Vec.load('tag_councillor_1970.d2v')
+model_councillors = Doc2Vec.load(r'DocModels\tag_councillor_1970.d2v')
 councillors_vectors = model_councillors.dv.vectors
 
 reduced_councillor_vectors = tsne.fit_transform(councillors_vectors)

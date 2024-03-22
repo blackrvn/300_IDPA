@@ -14,7 +14,7 @@ party_indices = {}
 corpus = []
 
 if __name__ == "__main__":
-    file = open(r"C:\Users\lukas\Downloads\test.json", 'r', encoding='utf-8')
+    file = open(r"C:\Users\vruser01\OneDrive - P.ARC AG\test.json", 'r', encoding='utf-8')
     data = json.load(file)
     for affair in tqdm(data, total=len(data)):
         if ("councillor" in affair["author"].keys()
@@ -30,13 +30,13 @@ if __name__ == "__main__":
                         lemmas = d["tagged"]["Lemmas"]
                         lemmas_text = " ".join(lemmas)
                         tokens = gensim.utils.simple_preprocess(lemmas_text)
-                        doc = gensim.models.doc2vec.TaggedDocument(tokens, [councillor])
+                        doc = gensim.models.doc2vec.TaggedDocument(tokens, [affair_num])
                         corpus.append(doc)
 
     model = Doc2Vec(vector_size=70, min_count=1, epochs=100, window=5, hs=1)
     model.build_vocab(corpus)
     model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
-    model.save("tag_councillor_1970.d2v")
+    model.save("DocModels\\tag_shortid_1970.d2v")
 
     """
     test_vec = model.infer_vector(test_doc)
