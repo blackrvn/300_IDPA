@@ -1,18 +1,14 @@
-import json
-
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from numpy import unique
-from numpy import where
 from gensim.models import Doc2Vec
 from icecream import ic
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 from sklearn.cluster import AgglomerativeClustering
-
-from query_json import interested_parties
+from utils import get_details_by_cname
+from utils import interested_parties
 
 tsne = TSNE(n_components=2, random_state=0)
 
@@ -27,7 +23,7 @@ model_councillors = Doc2Vec.load(r'DocModels\tag_councillor_1970.d2v')
 councillors_vectors = model_councillors.dv.vectors
 
 reduced_councillor_vectors = tsne.fit_transform(councillors_vectors)
-reduced_party_vectors = tsne.fit_transform(councillors_vectors)
+reduced_party_vectors = tsne.fit_transform(party_vectors)
 
 councillor_names = model_councillors.dv.index_to_key
 kmeans_councillors = KMeans(n_clusters=NUM_CLUSTERS, random_state=0)
@@ -36,13 +32,6 @@ labels_councillors = kmeans_councillors.labels_
 
 agglomerative_model = AgglomerativeClustering(n_clusters=NUM_CLUSTERS)
 agglomerative_result = agglomerative_model.fit_predict(councillors_vectors)
-
-
-def get_details_by_cname(name):
-    with open("councillor_details.json", "r") as file:
-        json_data = json.load(file)
-        return json_data[name]
-
 
 parties_by_person = []
 for index, person in enumerate(councillor_names):

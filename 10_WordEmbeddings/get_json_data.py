@@ -11,8 +11,8 @@ from icecream import ic
 
 nlp = de_dep_news_trf.load()
 
-file_write = open(r"affairs.json", "a", encoding="utf-8")
-file_read = open(r"affairs.json", "r", encoding="utf-8")
+file_write = open(r"C:\Users\lukas\Downloads\affairs.json", "a", encoding="utf-8")
+file_read = open(r"C:\Users\lukas\Downloads\affairs.json", "r", encoding="utf-8")
 
 
 def get_data(url):
@@ -28,7 +28,7 @@ def clean_text(text_raw):
     doc = nlp(text_raw)
     clean = [token for token in doc if not
              token.is_punct and not token.is_digit and not token.is_currency
-             and not token.is_bracket and len(token.text) > 1]
+             and not token.is_bracket and len(token.text) > 1 and token not in STOP_WORDS]
     for token in clean:
         text += token.text.lower().replace(';</p><p>-', ' ').replace('</p>', ' ').replace('<p>', ' ').replace('</p', ' ').replace('/p><p', ' ') + " "
     return text
@@ -69,7 +69,7 @@ def download():
                                    f"&format=json"):
             details = get_data(url=f'https://ws-old.parlament.ch/affairs/{affair["id"]}?lang=de&format=json')
             if isinstance(details, dict) and details is not None:
-                if details["affairType"]["id"] in [1, 2, 3, 4, 7, 10]:
+                if details["affairType"]["id"] in [1, 2, 3, 7, 10]:
                     continue
                 elif "councillor" in list(details["author"].keys()):
                     subbmitted_by = details["author"]["councillor"]["id"]
