@@ -8,6 +8,7 @@ import datetime
 import os
 from utils import interested_parties
 from utils import get_numbers
+from utils import trim_rule
 
 user = os.environ["HOMEPATH"]
 
@@ -20,7 +21,7 @@ test_data = {}
 num_tokens_by_party = get_numbers()[1]
 
 for np in num_tokens_by_party:
-    num_tokens_by_party[np] = num_tokens_by_party[np] * 0.95
+    num_tokens_by_party[np] = num_tokens_by_party[np] * 1
 
 file = open(rf"C:{user}\OneDrive - P.ARC AG\data.json", 'r', encoding='utf-8')
 data = json.load(file)
@@ -37,18 +38,18 @@ for affair in tqdm(data, total=len(data)):
                 if "tagged" in d.keys():
                     lemmas = d["tagged"]["Lemmas"]
                     lemmas_text = " ".join(lemmas)
-                    tokens = gensim.utils.simple_preprocess(lemmas_text)
-                    doc = gensim.models.doc2vec.TaggedDocument(tokens, [party])
+                    tokens = gensim.utils.simple_preprocess(lemmas_text, max_len=100)
+                    doc = gensim.models.doc2vec.TaggedDocument(tokens, [party, councillor])
                     if num_tokens_by_party[party] > 0:
                         training_data.append(doc)
                         num_tokens_by_party[party] -= len(tokens)
                     else:
                         test_data[affair_num] = doc
 
-model = Doc2Vec(vector_size=100, min_count=2, epochs=50, window=4, hs=0, negative=1)
+model = Doc2Vec(vector_size=100, min_count=1, epochs=100, window=5, hs=1, negative=0, workers=4, dm=0, dbow_words=1, shrink_windows=True, trim_rule=trim_rule)
 model.build_vocab(training_data)
 model.train(training_data, total_examples=model.corpus_count, epochs=model.epochs)
-model.save("DocModels\\tag_party.d2v")
+model.save("DocModels\\tag_party_test.d2v")
 
 file.close()
 with open("test_data.json", encoding="utf-8", mode="w") as test_file:

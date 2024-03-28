@@ -1,7 +1,9 @@
 import json
 import os
+import gensim
 
 interested_parties = ["SP", "SVP", "FDP-Liberale", "glp", "GRÜNE", "M-E"]
+fractions = {""}
 
 user = os.environ["HOMEPATH"]
 
@@ -62,3 +64,10 @@ def get_details_by_cname(name):
     with open("JSON/councillor_details.json", "r") as func_file:
         json_data = json.load(func_file)
         return json_data[name]
+
+
+def trim_rule(word, count, min_count):
+    if count > 100:
+        return gensim.utils.RULE_DISCARD
+    else:
+        return gensim.utils.RULE_DEFAULT

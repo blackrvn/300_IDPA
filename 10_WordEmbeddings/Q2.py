@@ -27,11 +27,11 @@ num_right = 0
 
 for i, a in enumerate(test_data):
     vec = model.infer_vector(test_data[a][0])
-    sims = model.dv.similar_by_vector(vec, topn=1)
+    sims = model.dv.similar_by_vector(vec, topn=2)
     expected = test_data[a][1][0]
-    calculated = sims[0]
+    calculated = [sims[0][0], sims[1][0]]
     sims_unseen_affairs[a] = {"Expected": expected, "Calculated": calculated}
-    if expected == calculated[0]:
+    if expected in calculated:
         num_right += 1
 
 total = len(sims_unseen_affairs.keys())
