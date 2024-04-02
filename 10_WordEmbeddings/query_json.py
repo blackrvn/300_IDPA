@@ -10,6 +10,7 @@ from utils import interested_parties
 from utils import get_numbers
 from utils import trim_rule
 
+
 user = os.environ["HOMEPATH"]
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -28,7 +29,7 @@ data = json.load(file)
 for affair in tqdm(data, total=len(data)):
     if ("councillor" in affair["author"].keys()
             and "party" in affair["author"]["councillor"].keys()
-            and datetime.datetime.fromisoformat(affair["deposit"]["date"][:10]).year > 1969):
+            and affair["deposit"]["legislativePeriod"] >= 51):
         party = affair["author"]["councillor"]["party"]
         if party in interested_parties:
             councillor = affair["author"]["councillor"]["name"]
@@ -46,10 +47,10 @@ for affair in tqdm(data, total=len(data)):
                     else:
                         test_data[affair_num] = doc
 
-model = Doc2Vec(vector_size=100, min_count=1, epochs=100, window=5, hs=1, negative=0, workers=4, dm=0, dbow_words=1, shrink_windows=True, trim_rule=trim_rule)
+model = Doc2Vec(vector_size=70, min_count=5, epochs=30, window=5, hs=1, negative=0, workers=4, dm=0, dbow_words=1, shrink_windows=True, trim_rule=trim_rule)
 model.build_vocab(training_data)
 model.train(training_data, total_examples=model.corpus_count, epochs=model.epochs)
-model.save("DocModels\\tag_party_test.d2v")
+model.save("DocModels\\tag_party_geq51.d2v")
 
 file.close()
 with open("test_data.json", encoding="utf-8", mode="w") as test_file:

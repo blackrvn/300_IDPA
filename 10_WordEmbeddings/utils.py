@@ -1,6 +1,14 @@
 import json
 import os
 import gensim
+from spacy.lang.de.stop_words import STOP_WORDS
+import treetaggerwrapper
+
+import de_dep_news_trf
+
+from icecream import ic
+
+nlp = de_dep_news_trf.load()
 
 interested_parties = ["SP", "SVP", "FDP-Liberale", "glp", "GRÜNE", "M-E"]
 fractions = {""}
@@ -71,3 +79,79 @@ def trim_rule(word, count, min_count):
         return gensim.utils.RULE_DISCARD
     else:
         return gensim.utils.RULE_DEFAULT
+
+
+def calculate_accuracy(dictionary):
+    correct = 0
+    total = 0
+
+    for person, data in dictionary.items():
+        actual_party = data['Zugehörigkeit']
+        similarities = data['Ähnlichkeiten']
+
+        # Find the parties with the two highest similarities
+        predicted_parties = sorted(similarities, key=similarities.get, reverse=True)[:1]
+
+        # If one of the predicted parties is the same as the actual party, increment correct
+        if actual_party in predicted_parties:
+            correct += 1
+
+        total += 1
+
+    # Calculate accuracy
+    accuracy = correct / total
+
+    return accuracy
+
+
+def get_num_councillors(party):
+    with open(rf"JSON/councillor_details.json", encoding="windows-1252") as f:
+        json_data = json.load(f)
+        data = {}
+        for councillor in json_data:
+            if json_data[councillor]["party"] in data.keys():
+                data[json_data[councillor]["party"]] += 1
+            else:
+                data[json_data[councillor]["party"]] = 1
+
+        return data[party]
+
+
+def tag_text(cleaned_text):
+    tagger = treetaggerwrapper.TreeTagger(
+        TAGLANG='de',
+        TAGPARFILE=r"C:\TreeTagger\lib\german.par",
+        TAGABBREV=r"C:\TreeTagger\lib\german-abbreviations"
+    )
+    tags = treetaggerwrapper.make_tags(tagger.tag_text(cleaned_text))
+    out_dict = {"Words": [], "Tags": [], "Lemmas": []}
+    try:
+        for idx, tag in enumerate(tags):
+            lemma = tag[2]
+            if len(lemma) == 1:
+                continue
+            elif "+" in lemma or "@" in lemma:
+                out_dict["Words"].append(tag[0])
+                out_dict["Tags"].append(tag[1])
+                out_dict["Lemmas"].append(tag[0])
+            else:
+                out_dict["Words"].append(tag[0])
+                out_dict["Tags"].append(tag[1])
+                out_dict["Lemmas"].append(tag[-1])
+    except:
+        pass
+
+    return out_dict
+
+
+def clean_text(text_raw):
+    text = ''
+    doc = nlp(text_raw)
+    clean = [token for token in doc if not
+    token.is_punct and not token.is_digit and not token.is_currency
+             and not token.is_bracket and len(token.text) > 1 and token not in STOP_WORDS]
+    for token in clean:
+        text += token.text.lower().replace(';</p><p>-', ' ').replace('</p>', ' ').replace('<p>', ' ').replace('</p',
+                                                                                                              ' ').replace(
+            '/p><p', ' ') + " "
+    return text

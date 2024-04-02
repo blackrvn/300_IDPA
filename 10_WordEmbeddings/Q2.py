@@ -1,38 +1,64 @@
-import json
-
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from numpy import unique
+import gensim
 from gensim.models import Doc2Vec
 from icecream import ic
-from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
-from sklearn.cluster import AgglomerativeClustering
 from utils import get_details_by_cname
 from utils import interested_parties
-import gensim
+from utils import calculate_accuracy
+from utils import get_num_councillors
+from utils import clean_text, tag_text
 
-tsne = TSNE(n_components=3, random_state=0, perplexity=5)
 model = Doc2Vec.load(r'DocModels\tag_party.d2v')
-doc_vectors = model.dv
+party_vectors = np.array([model.dv[p] for p in interested_parties])
 
-with open("test_data.json", encoding="utf-8", mode="r") as test_file:
-    test_data = json.load(test_file)
+s1 = "Das Volk muss sich gegen die korrupten Eliten erheben und für die wahre Freiheit kämpfen."
+s2 = "Die politische Klasse verrät das Volk, indem sie sich den Interessen der Banker und Geschäftsleute unterwirft."
+s3 = "Wir, das Volk, müssen die Wahrheit über die Machenschaften der politischen Propaganda aufdecken."
 
-docs = [test_data[affair] for affair in test_data]
+statements = [s1, s2, s3]
+labels = []
+docs = []
 
-sims_unseen_affairs = {}
-num_right = 0
+for i, s in enumerate(statements):
+    labels.append(f"s{i+1}")
+    cleaned_text = clean_text(s)
+    tagged_text = tag_text(cleaned_text)
+    lemmas_text = " ".join(tagged_text["Lemmas"])
+    tokens = gensim.utils.simple_preprocess(lemmas_text, max_len=100)
+    doc = gensim.models.doc2vec.TaggedDocument(tokens, [f"s{i+1}"])
+    docs.append(doc)
 
-for i, a in enumerate(test_data):
-    vec = model.infer_vector(test_data[a][0])
-    sims = model.dv.similar_by_vector(vec, topn=2)
-    expected = test_data[a][1][0]
-    calculated = [sims[0][0], sims[1][0]]
-    sims_unseen_affairs[a] = {"Expected": expected, "Calculated": calculated}
-    if expected in calculated:
-        num_right += 1
+ic(docs)
 
-total = len(sims_unseen_affairs.keys())
-ic(round(num_right/total, 2))
+sims = []
+
+for d in docs:
+    inferred_vector = model.infer_vector(d.words)
+    most_similar = model.dv.cosine_similarities(inferred_vector, party_vectors)
+    sims.append(most_similar)
+
+sims = np.array(sims).reshape(len(statements), len(interested_parties)).transpose()
+ic(sims)
+party_colors = ["r", "c", "b", "y", "g", "orange"]
+
+# Create bar chart with grouped bars and different colors
+plt.figure(figsize=(10, 6))
+bar_width = 0.15
+x = np.arange(len(statements))
+
+for i, similarities in enumerate(sims):
+    plt.bar(x + i * bar_width, similarities, bar_width, label=interested_parties[i], color=party_colors[i])
+
+plt.xlabel('Aussagen')
+plt.ylabel('Ähnlichkeit zu Partei')
+plt.xticks(x + bar_width * 2.5, labels=labels, rotation=45, ha='right')
+plt.legend()
+plt.tight_layout()
+plt.savefig(r"C:\Users\lukas\Documents\300_IDPA\09_Quellen\Plots\Q2_PopStatements.png")
+plt.show()
+
